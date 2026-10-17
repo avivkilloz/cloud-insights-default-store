@@ -9,4 +9,5 @@ contributes:
   - dynamodb_tables
   - iot_offline_devices
   - mqtt_listen
+  - restart_with_signoff
   - try_me
