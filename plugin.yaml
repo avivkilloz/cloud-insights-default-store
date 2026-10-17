@@ -1,0 +1,7 @@
+id: default
+name: default
+version: 0.0.0
+contributes:
+  credential_types:
+  - acme_api
+  - asfasfasfas

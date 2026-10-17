@@ -1,0 +1,33 @@
+id: acme_api
+label: acme_api
+description: acme_api
+version: 1
+fields:
+- key: user_name
+  label: userName
+  kind: text
+  secret: false
+  required: true
+  help: ''
+- key: password
+  label: password
+  kind: text
+  secret: true
+  required: true
+  help: ''
+- key: auth_tenant
+  label: tenant
+  kind: text
+  secret: false
+  required: false
+  help: ''
+  default: acme
+output_template: '{"userName": user_name, "password": password, "auth": {"tenant": auth_tenant}}'
+inject:
+  kind: basic
+  username: user_name
+  password: password
+http_test:
+  method: GET
+  url: '"https://httpbin.org/basic-auth/" + user_name + "/" + password'
+  headers: {}
