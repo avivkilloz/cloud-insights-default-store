@@ -5,4 +5,5 @@ contributes:
   credential_types:
   - acme_api
   workflows:
+  - cloudwatch_errors
   - try_me
