@@ -4,3 +4,5 @@ version: 0.0.0
 contributes:
   credential_types:
   - acme_api
+  workflows:
+  - my_amazing_first_workflow
