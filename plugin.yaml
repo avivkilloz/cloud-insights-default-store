@@ -6,4 +6,5 @@ contributes:
   - acme_api
   workflows:
   - cloudwatch_errors
+  - dynamodb_tables
   - try_me
