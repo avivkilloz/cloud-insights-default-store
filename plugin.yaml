@@ -6,3 +6,4 @@ contributes:
   - acme_api
   workflows:
   - my_amazing_first_workflow
+  - second_workflow
