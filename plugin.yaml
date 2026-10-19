@@ -12,3 +12,5 @@ contributes:
   - prometheus_down
   - restart_with_signoff
   - try_me
+  panes:
+  - service_status

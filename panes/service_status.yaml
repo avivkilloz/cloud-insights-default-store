@@ -1,0 +1,34 @@
+id: default:service_status
+# A pane type: its inputs, the actions that fill its outputs, and how it's laid out.
+# Check finds any mistake with its line; Create makes it, for your group at once.
+label: Service status
+description: The status of a service, from an HTTP API connection.
+category: Tools
+inputs:
+  - key: connection
+    type: connection
+    connection_type: http_api
+    label: Connection
+  - key: path
+    type: text
+    label: Path
+    default: /status
+actions:
+  - id: fetch
+    main: true
+    run_label: Check
+    request: { method: GET, connection: connection, path: path }
+outputs:
+  - key: response
+    render: json
+layout:
+  - title: Service
+    items:
+      - input: connection
+      - input: path
+      - toolbar:
+          - action: fetch
+  - title: Status
+    when: { output: response, present: true }
+    items:
+      - output: response
