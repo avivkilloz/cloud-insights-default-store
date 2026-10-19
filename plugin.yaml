@@ -12,5 +12,3 @@ contributes:
   - prometheus_down
   - restart_with_signoff
   - try_me
-  templates:
-  - iot_debugging
