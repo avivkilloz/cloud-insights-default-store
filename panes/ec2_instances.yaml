@@ -1,0 +1,54 @@
+id: default:ec2_instances
+# A pane type: its inputs, the actions that fill its outputs, and how it's laid out.
+# Check finds any mistake with its line; Create makes it, for your group at once.
+label: EC2 instances
+description: EC2 instances in AWS environments, with expandable details.
+category: Services
+inputs: [{key: connections, type: connections, connection_type: aws, label: Environments}]
+actions:
+  - id: list
+    main: true
+    run_label: List
+    resets:
+      - view.expanded
+    request:
+      connection: connections
+      service: ec2
+      operation: DescribeInstances
+      paginate: true
+  - id: detail
+    args:
+      connections: row.Environment
+      instance: row.Instance ID
+    request:
+      connection: connections
+      service: ec2
+      operation: DescribeInstances
+      params:
+        InstanceIds:
+          - input: instance
+outputs:
+  - key: rows
+    render: table
+    actions:
+      - select
+      - copy
+      - export
+      - attach
+    config:
+      expand: expanded
+      detail:
+        action: detail
+  - key: error
+    render: error
+views:
+  - key: expanded
+    default: []
+layout:
+  - title: Instances
+    items:
+      - input: connections
+      - toolbar:
+          - action: list
+      - output: error
+      - output: rows

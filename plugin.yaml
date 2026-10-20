@@ -13,5 +13,6 @@ contributes:
   - restart_with_signoff
   - try_me
   panes:
+  - ec2_instances
   - lambdas
   - service_status
