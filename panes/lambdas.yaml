@@ -1,0 +1,48 @@
+id: default:lambdas
+label: List lambdas
+description: List Lambda functions across environments with their runtime and memory.
+category: Services
+inputs:
+  - key: connections
+    type: connections
+    connection_type: aws
+    label: Environments
+
+actions:
+  - id: list
+    main: true
+    run_label: List
+    request:
+      connection: connections
+      service: lambda
+      operation: ListFunctions
+      paginate: true
+      rows:
+        at: Functions
+        columns:
+          - name: Name
+            at: FunctionName
+          - name: Runtime
+            at: Runtime
+          - name: Memory
+            at: MemorySize
+            as: number
+          - name: Modified
+            at: LastModified
+
+outputs:
+  - key: rows
+    render: table
+    actions: [select, copy, export, attach]
+    inspect: true
+  - key: error
+    render: error
+
+layout:
+  - title: Functions
+    items:
+      - input: connections
+      - toolbar:
+          - action: list
+      - output: error
+      - output: rows
