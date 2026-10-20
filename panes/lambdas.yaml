@@ -20,15 +20,12 @@ actions:
       rows:
         at: Functions
         columns:
-          - name: Name
-            at: FunctionName
-          - name: Runtime
-            at: Runtime
-          - name: Memory
-            at: MemorySize
+          Name: FunctionName
+          Runtime: Runtime
+          Memory:
+            from: MemorySize
             as: number
-          - name: Modified
-            at: LastModified
+          Modified: LastModified
 
 outputs:
   - key: rows
