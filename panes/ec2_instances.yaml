@@ -37,10 +37,6 @@ actions:
       params:
         InstanceIds:
           - input: instance
-  - id: clear
-    run_label: Clear
-    main: false
-    handler: platform.workflows.list
 outputs:
   - key: rows
     render: table
@@ -63,7 +59,8 @@ layout:
     items:
       - input: connections
       - toolbar:
-          - action: clear
           - action: list
       - output: error
       - output: rows
+    clear:
+      - rows
