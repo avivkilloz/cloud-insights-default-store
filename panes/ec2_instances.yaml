@@ -16,6 +16,16 @@ actions:
       service: ec2
       operation: DescribeInstances
       paginate: true
+      rows:
+        at: Reservations
+        columns:
+          Instance ID: InstanceId
+          Name: Tags[Key=Name].Value
+          Type: InstanceType
+          State: State.Name
+          Private IP: PrivateIpAddress
+          Public IP: PublicIpAddress
+        explode: Instances
   - id: detail
     args:
       connections: row.Environment
