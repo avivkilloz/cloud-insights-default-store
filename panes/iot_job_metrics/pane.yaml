@@ -11,8 +11,14 @@ inputs:
   - key: statusFilter
     type: choice
     label: Status filter
-    choices: ["", IN_PROGRESS, COMPLETED, CANCELED, DELETION_IN_PROGRESS]
-    choice_labels: {"": All, IN_PROGRESS: In Progress, COMPLETED: Completed, CANCELED: Canceled, DELETION_IN_PROGRESS: Deletion In Progress}
+    choices: ['', IN_PROGRESS, COMPLETED, CANCELED, DELETION_IN_PROGRESS]
+    choice_labels:
+      ? ''
+      : All
+      IN_PROGRESS: In Progress
+      COMPLETED: Completed
+      CANCELED: Canceled
+      DELETION_IN_PROGRESS: Deletion In Progress
     optional: true
     default: ""
 actions:
@@ -39,6 +45,8 @@ actions:
           Created: createdAt
           Last Updated: lastUpdatedAt
           Completed: completedAt
+    resets:
+      - view.expanded
   - id: detail
     run_label: Load details
     code:
@@ -58,31 +66,52 @@ outputs:
         sections:
           - title: Job Details
             fields:
-              - {label: Job ID, value: "{{ d.job_id }}"}
-              - {label: Status, value: "{{ d.status }}"}
-              - {label: Target Selection, value: "{{ d.target_selection }}"}
-              - {label: Description, value: "{{ d.description ?? '—' }}"}
-              - {label: Concurrent, value: "{{ d.is_concurrent }}"}
+              - label: Job ID
+                value: '{{ d.job_id }}'
+              - label: Status
+                value: '{{ d.status }}'
+              - label: Target Selection
+                value: '{{ d.target_selection }}'
+              - label: Description
+                value: '{{ d.description ?? ''—'' }}'
+              - label: Concurrent
+                value: '{{ d.is_concurrent }}'
           - title: Execution Summary
             fields:
-              - {label: Queued, value: "{{ d.processing.queued }}"}
-              - {label: In Progress, value: "{{ d.processing.in_progress }}"}
-              - {label: Succeeded, value: "{{ d.processing.succeeded }}"}
-              - {label: Failed, value: "{{ d.processing.failed }}"}
-              - {label: Canceled, value: "{{ d.processing.canceled }}"}
-              - {label: Rejected, value: "{{ d.processing.rejected }}"}
-              - {label: Timed Out, value: "{{ d.processing.timed_out }}"}
-              - {label: Removed, value: "{{ d.processing.removed }}"}
+              - label: Queued
+                value: '{{ d.processing.queued }}'
+              - label: In Progress
+                value: '{{ d.processing.in_progress }}'
+              - label: Succeeded
+                value: '{{ d.processing.succeeded }}'
+              - label: Failed
+                value: '{{ d.processing.failed }}'
+              - label: Canceled
+                value: '{{ d.processing.canceled }}'
+              - label: Rejected
+                value: '{{ d.processing.rejected }}'
+              - label: Timed Out
+                value: '{{ d.processing.timed_out }}'
+              - label: Removed
+                value: '{{ d.processing.removed }}'
+          - title: Job Document
+            json: job_document
+            empty: No job document available.
           - title: Targets
             table: targets
             empty: No targets found.
             columns:
-              - {label: Name, value: "{{ row.name }}"}
-              - {label: Type, value: "{{ row.type }}"}
-              - {label: Query, value: "{{ row.query ?? '—' }}"}
+              - label: Name
+                value: '{{ row.name }}'
+              - label: Type
+                value: '{{ row.type }}'
+              - label: Query
+                value: '{{ row.query ?? ''—'' }}'
   - key: error
     render: error
 views:
+  - key: expanded
+    default: []
   - key: expanded
     default: []
 layout:
@@ -95,7 +124,8 @@ layout:
           - input: statusFilter
           - action: list
   - title: 3. Jobs
-    clear: [jobs]
+    clear:
+      - jobs
     items:
       - restored: list
       - output: error
