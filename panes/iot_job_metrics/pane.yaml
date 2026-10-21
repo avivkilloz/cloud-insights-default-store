@@ -53,11 +53,22 @@ actions:
       file: job_detail.py
     args:
       connection: row.Environment
-      jobId: row.Job ID
+      jobId: row.jobId
+  - id: export_details
+    run_label: Export selected with details
+    args:
+      connections: row.Environment
+      job_id: row.jobId
+    code:
+      file: job_export.py
 outputs:
   - key: jobs
     render: table
-    actions: [select, copy, export, attach]
+    actions:
+      - select
+      - copy
+      - export
+      - attach
     config:
       expand: expanded
       domain: iot-jobs
@@ -79,21 +90,21 @@ outputs:
           - title: Execution Summary
             fields:
               - label: Queued
-                value: '{{ d.processing.queued }}'
+                value: '{{ d.job_process_details.number_of_queued_things ?? ''0'' }}'
               - label: In Progress
-                value: '{{ d.processing.in_progress }}'
+                value: '{{ d.job_process_details.number_of_in_progress_things ?? ''0'' }}'
               - label: Succeeded
-                value: '{{ d.processing.succeeded }}'
+                value: '{{ d.job_process_details.number_of_succeeded_things ?? ''0'' }}'
               - label: Failed
-                value: '{{ d.processing.failed }}'
+                value: '{{ d.job_process_details.number_of_failed_things ?? ''0'' }}'
               - label: Canceled
-                value: '{{ d.processing.canceled }}'
+                value: '{{ d.job_process_details.number_of_canceled_things ?? ''0'' }}'
               - label: Rejected
-                value: '{{ d.processing.rejected }}'
+                value: '{{ d.job_process_details.number_of_rejected_things ?? ''0'' }}'
               - label: Timed Out
-                value: '{{ d.processing.timed_out }}'
+                value: '{{ d.job_process_details.number_of_timed_out_things ?? ''0'' }}'
               - label: Removed
-                value: '{{ d.processing.removed }}'
+                value: '{{ d.job_process_details.number_of_removed_things ?? ''0'' }}'
           - title: Job Document
             json: job_document
             empty: No job document available.
@@ -107,13 +118,14 @@ outputs:
                 value: '{{ row.type }}'
               - label: Query
                 value: '{{ row.query ?? ''—'' }}'
+  - key: jobDetails
+    render: table
+    actions:
+      - export
+      - copy
+    label: Job Details Export
   - key: error
     render: error
-views:
-  - key: expanded
-    default: []
-  - key: expanded
-    default: []
 layout:
   - title: 1. Choose environments
     items:
@@ -126,7 +138,20 @@ layout:
   - title: 3. Jobs
     clear:
       - jobs
+      - jobDetails
     items:
       - restored: list
+      - toolbar:
+          - action: export_details
+            when:
+              output: jobs
+              present: true
       - output: error
       - output: jobs
+      - output: jobDetails
+        when:
+          output: jobDetails
+          present: true
+views:
+  - key: expanded
+    default: []

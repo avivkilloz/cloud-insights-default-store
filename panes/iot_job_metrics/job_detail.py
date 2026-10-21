@@ -1,63 +1,49 @@
 def run(inputs, ctx):
-    import json
+    connection = inputs['connection']
+    job_id = inputs['jobId']
     
-    connection = inputs["connection"]["id"] if isinstance(inputs["connection"], dict) else inputs["connection"]
-    job_id = inputs["jobId"]
+    # Get job details using DescribeJob
+    job_result = ctx.aws(connection, 'iot', 'DescribeJob', params={'jobId': job_id})
+    job = job_result.get('job', {})
     
-    # Get job details
-    job_resp = ctx.aws(connection, "iot", "DescribeJob", params={"jobId": job_id})
-    job = job_resp.get("job", {})
-    
-    # Get job document
+    # Get job document separately using GetJobDocument
     try:
-        doc_resp = ctx.aws(connection, "iot", "GetJobDocument", params={"jobId": job_id})
-        job_document = doc_resp.get("document", {})
+        doc_result = ctx.aws(connection, 'iot', 'GetJobDocument', params={'jobId': job_id})
+        job_document = doc_result.get('document', None)
     except Exception:
-        job_document = {}
+        job_document = None
     
-    # Build targets list from the job's targets
+    # Process targets
     targets = []
-    for target in job.get("targets", []):
-        # Parse target ARN to determine type
-        if target.startswith("arn:aws:iot"):
-            if ":thinggroup/" in target:
-                parts = target.split("thinggroup/")
-                name = parts[-1].split(":")[0] if ":" in parts[-1] else parts[-1]
-                targets.append({"name": name, "type": "Thing Group", "query": None})
-            elif ":thing/" in target:
-                parts = target.split("thing/")
-                name = parts[-1]
-                targets.append({"name": name, "type": "Thing", "query": None})
-        elif target.startswith("arn:aws:iam"):
-            targets.append({"name": target.split("/")[-1], "type": "ARN", "query": None})
+    for target in job.get('targets', []):
+        # Parse target ARN to extract name and determine type
+        if ':thing/' in target:
+            target_type = 'Thing'
+            name = target.split(':thing/')[-1]
+        elif ':thinggroup/' in target:
+            target_type = 'Thing Group'
+            name = target.split(':thinggroup/')[-1]
         else:
-            targets.append({"name": target, "type": "Unknown", "query": None})
-    
-    # Add thing group query if available
-    for t in targets:
-        if t["type"] == "Thing Group" and job.get("thingGroupId"):
-            t["query"] = job.get("thingGroupId")
-    
-    processing = job.get("jobProcessDetails", {})
+            target_type = 'Unknown'
+            name = target
+        
+        targets.append({
+            'name': name,
+            'type': target_type,
+            'arn': target
+        })
     
     return {
-        "detail": {
-            "job_id": job.get("jobId"),
-            "status": job.get("status"),
-            "target_selection": job.get("targetSelection"),
-            "description": job.get("description"),
-            "is_concurrent": job.get("isConcurrent", False),
-            "job_document": job_document,
-            "targets": targets,
-            "processing": {
-                "queued": processing.get("numberOfQueuedThings", 0),
-                "in_progress": processing.get("numberOfInProgressThings", 0),
-                "succeeded": processing.get("numberOfSucceededThings", 0),
-                "failed": processing.get("numberOfFailedThings", 0),
-                "canceled": processing.get("numberOfCanceledThings", 0),
-                "rejected": processing.get("numberOfRejectedThings", 0),
-                "timed_out": processing.get("numberOfTimedOutThings", 0),
-                "removed": processing.get("numberOfRemovedThings", 0),
-            }
-        }
+        'job_id': job.get('jobId'),
+        'job_arn': job.get('jobArn'),
+        'status': job.get('status'),
+        'target_selection': job.get('targetSelection'),
+        'description': job.get('description'),
+        'is_concurrent': job.get('isConcurrent', False),
+        'created_at': job.get('createdAt'),
+        'last_updated_at': job.get('lastUpdatedAt'),
+        'completed_at': job.get('completedAt'),
+        'job_process_details': job.get('jobProcessDetails', {}),
+        'job_document': job_document,
+        'targets': targets
     }
