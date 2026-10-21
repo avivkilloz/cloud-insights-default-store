@@ -56,11 +56,11 @@ actions:
       jobId: row.Job ID
   - id: export_details
     run_label: Export selected with details
-    args:
-      connections: row.Environment
-      job_id: row.jobId
     code:
       file: job_export.py
+    args:
+      connections: row.Environment
+      job_id: row.Job ID
 outputs:
   - key: jobs
     render: table

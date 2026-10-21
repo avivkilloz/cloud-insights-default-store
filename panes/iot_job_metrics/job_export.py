@@ -1,59 +1,73 @@
 def run(inputs, ctx):
-    import json
+    connection = inputs.get("connections")
+    job_id = inputs.get("job_id")
     
-    # Get the connections input and the selected row data
-    connections_input = inputs.get('connections', [])
-    job_id = inputs.get('jobId')
-    
-    results = []
-    errors = []
-    
-    # Handle both single selection and multi-selection via the table's select mechanism
-    # When action is triggered from toolbar with selected rows, inputs contain the row data
-    if isinstance(connections_input, list):
-        # Multi-environment case - process each
-        for conn in connections_input:
-            if not conn:
-                continue
-            try:
-                _fetch_job_details(ctx, conn, job_id, results, errors)
-            except Exception as e:
-                errors.append({'connection': conn, 'job_id': job_id, 'error': str(e)})
-    else:
-        # Single connection case
-        connection = connections_input
-        try:
-            _fetch_job_details(ctx, connection, job_id, results, errors)
-        except Exception as e:
-            errors.append({'connection': connection, 'job_id': job_id, 'error': str(e)})
-    
-    return {'jobDetails': results, 'error': errors if errors else None}
-
-def _fetch_job_details(ctx, connection, job_id, results, errors):
-    """Fetch job details and append to results."""
     if not connection or not job_id:
-        return
-        
-    # Get full job details
-    job_result = ctx.aws(connection, 'iot', 'DescribeJob', params={'jobId': job_id})
-    job = job_result.get('job', {})
-    job_details = job.get('jobProcessDetails', {})
+        return {"error": "Missing connection or job_id"}
     
-    results.append({
-        'job_id': job.get('jobId'),
-        'status': job.get('status'),
-        'target_selection': job.get('targetSelection'),
-        'queued': job_details.get('numberOfQueuedThings', 0),
-        'in_progress': job_details.get('numberOfInProgressThings', 0),
-        'succeeded': job_details.get('numberOfSucceededThings', 0),
-        'failed': job_details.get('numberOfFailedThings', 0),
-        'canceled': job_details.get('numberOfCanceledThings', 0),
-        'rejected': job_details.get('numberOfRejectedThings', 0),
-        'timed_out': job_details.get('numberOfTimedOutThings', 0),
-        'removed': job_details.get('numberOfRemovedThings', 0),
-        'created_at': job.get('createdAt'),
-        'last_updated_at': job.get('lastUpdatedAt'),
-        'completed_at': job.get('completedAt'),
-        'description': job.get('description'),
-        'is_concurrent': job.get('isConcurrent', False),
-    })
+    try:
+        result = ctx.aws(connection, "iot", "DescribeJob", {"jobId": job_id})
+        job = result.get("job", {})
+        
+        # Build targets list
+        targets = []
+        for target in job.get("targets", []):
+            target_type = "unknown"
+            name = target
+            if "/thing/" in target or target.endswith("/*"):
+                target_type = "thing"
+                name = target.split("/")[-1]
+            elif "/thinggroup/" in target:
+                target_type = "thing_group"
+                name = target.split("/")[-1]
+            
+            targets.append({
+                "name": name,
+                "type": target_type,
+                "arn": target
+            })
+        
+        # Get job document content
+        job_document = None
+        document_source = result.get("documentSource")
+        if document_source:
+            if document_source.startswith("http://") or document_source.startswith("https://"):
+                try:
+                    resp = ctx.http(None, document_source, method="GET")
+                    if resp.status == 200:
+                        job_document = resp.json()
+                    else:
+                        job_document = {"error": f"Could not fetch document: {resp.status}"}
+                except Exception as e:
+                    job_document = {"error": str(e)}
+            else:
+                try:
+                    import json
+                    job_document = json.loads(document_source)
+                except:
+                    job_document = document_source
+        
+        if job_document is None:
+            job_document = job.get("document")
+        
+        return {
+            "jobDetails": [{
+                "job_id": job.get("jobId"),
+                "status": job.get("status"),
+                "target_selection": job.get("targetSelection"),
+                "description": job.get("description", ""),
+                "is_concurrent": job.get("isConcurrent", False),
+                "job_document": job_document,
+                "job_process_details": job.get("jobProcessDetails", {}),
+                "targets": targets,
+                "created_at": job.get("createdAt"),
+                "last_updated_at": job.get("lastUpdatedAt"),
+                "completed_at": job.get("completedAt"),
+                "environment": connection
+            }]
+        }
+    except Exception as e:
+        return {
+            "error": str(e),
+            "jobDetails": []
+        }
