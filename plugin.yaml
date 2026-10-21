@@ -14,5 +14,6 @@ contributes:
   - try_me
   panes:
   - ec2_instances
+  - lambda_health
   - lambdas
   - service_status
