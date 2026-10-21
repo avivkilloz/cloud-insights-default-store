@@ -53,7 +53,7 @@ actions:
       file: job_detail.py
     args:
       connection: row.Environment
-      jobId: row.jobId
+      jobId: row.Job ID
   - id: export_details
     run_label: Export selected with details
     args:
