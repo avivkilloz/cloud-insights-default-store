@@ -1,0 +1,51 @@
+id: default:iot_ota_jobs
+label: IoT OTA jobs
+description: AWS IoT OTA firmware jobs across environments, with execution status.
+category: Services
+inputs:
+  - key: connections
+    type: connections
+    connection_type: aws
+    label: Environments
+    help: Which environments to list jobs from.
+actions:
+  - id: list_jobs
+    main: true
+    run_label: List jobs
+    busy_label: Fetching jobs…
+    resets: [view.expanded]
+    code:
+      file: list_jobs.py
+    requires: { connections: Select at least one environment. }
+  - id: describe_job
+    args:
+      connection: row.Environment
+      jobId: row.Job ID
+    code:
+      file: describe_job.py
+outputs:
+  - key: rows
+    render: table
+    actions: [select, copy, export, attach]
+    config:
+      expand: expanded
+      detail:
+        action: describe_job
+        include: Include detail & executions
+        include_help: Fetches each checked job's full detail and device executions. One request per job.
+        noun: job(s)
+  - key: error
+    render: error
+views:
+  - { key: expanded, default: [] }
+layout:
+  - title: Environments
+    items:
+      - input: connections
+  - title: Jobs
+    clear: [rows]
+    items:
+      - toolbar:
+          - action: list_jobs
+      - output: error
+      - output: rows

@@ -14,6 +14,7 @@ contributes:
   - try_me
   panes:
   - ec2_instances
+  - iot_ota_jobs
   - lambda_health
   - lambdas
   - service_status
