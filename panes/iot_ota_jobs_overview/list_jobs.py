@@ -31,6 +31,7 @@ def run(inputs, ctx):
     max_jobs = _int(inputs.get("max_jobs"), 50)
 
     errors = []
+    denied = set()
 
     def list_jobs(conn_id):
         name = ctx.name(conn_id)
@@ -52,7 +53,36 @@ def run(inputs, ctx):
         try:
             document = _pretty(ctx.aws(conn_id, "iot", "GetJobDocument", params={"jobId": job_id}).get("document"))
         except Exception as e:
-            problems.append(f"GetJobDocument: {e}")
+            if "AccessDenied" in str(e):
+                denied.add("iot:GetJobDocument")
+            else:
+                problems.append(f"GetJobDocument: {e}")
+            if job_id and job_id.startswith("AFR_OTA-"):
+                try:
+                    info = ctx.aws(conn_id, "iot", "GetOTAUpdate", params={"otaUpdateId": job_id[len("AFR_OTA-"):]}).get("otaUpdateInfo", {}) or {}
+                    document = json.dumps({
+                        "source": "GetOTAUpdate (job document not readable)",
+                        "otaUpdateStatus": info.get("otaUpdateStatus"),
+                        "protocols": info.get("protocols"),
+                        "targets": info.get("targets"),
+                        "files": [
+                            {
+                                "fileName": f.get("fileName"),
+                                "fileVersion": f.get("fileVersion"),
+                                "fileType": f.get("fileType"),
+                                "s3": (f.get("fileLocation") or {}).get("s3Location"),
+                                "signed": bool(f.get("codeSigning")),
+                                "attributes": f.get("attributes"),
+                            }
+                            for f in info.get("otaUpdateFiles", []) or []
+                        ],
+                        "additionalParameters": info.get("additionalParameters"),
+                    }, indent=2, default=str)
+                except Exception as e2:
+                    if "AccessDenied" in str(e2):
+                        denied.add("iot:GetOTAUpdate")
+                    else:
+                        problems.append(f"GetOTAUpdate: {e2}")
 
         d = job.get("jobProcessDetails") or {}
         counts = {
@@ -97,6 +127,8 @@ def run(inputs, ctx):
             rows.append(row)
 
     rows.sort(key=lambda r: str(r.get("Created") or ""), reverse=True)
+    if denied:
+        errors.insert(0, "Job document unavailable: the platform's AWS role is missing " + ", ".join(sorted(denied)) + ".")
     result = {"rows": rows}
     if errors:
         result["error"] = "\n".join(errors)
