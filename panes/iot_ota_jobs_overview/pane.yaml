@@ -1,0 +1,63 @@
+id: default:iot_ota_jobs_overview
+label: IoT OTA jobs overview
+description: IoT jobs per environment, each row with its job document, execution counts by status and timestamps.
+category: Services
+inputs:
+  - key: connections
+    type: connections
+    connection_type: aws
+    label: Environments
+    help: Which environments to list jobs from.
+  - key: status
+    type: text
+    label: Job status filter
+    help: Optional - IN_PROGRESS, COMPLETED, CANCELED, SCHEDULED or DELETION_IN_PROGRESS. Leave empty for all.
+    default: ""
+  - key: max_jobs
+    type: text
+    label: Max jobs per environment
+    help: Each job costs two extra API calls (DescribeJob + GetJobDocument).
+    default: "50"
+actions:
+  - id: list_jobs
+    main: true
+    run_label: List jobs
+    busy_label: Fetching jobs, details and documents…
+    resets: [view.expanded]
+    code:
+      file: list_jobs.py
+    requires: { connections: Select at least one environment. }
+  - id: job_executions
+    args:
+      connection: row.Environment
+      jobId: row.Job ID
+    code:
+      file: job_executions.py
+outputs:
+  - key: rows
+    render: table
+    actions: [select, copy, export, attach]
+    config:
+      expand: expanded
+      detail:
+        action: job_executions
+        include: Include per-thing executions
+        include_help: Lists each checked job's device executions. One request per job.
+        noun: job(s)
+  - key: error
+    render: error
+views:
+  - { key: expanded, default: [] }
+layout:
+  - title: Environments
+    items:
+      - input: connections
+      - input: status
+      - input: max_jobs
+  - title: Jobs
+    clear: [rows]
+    items:
+      - toolbar:
+          - action: list_jobs
+      - output: error
+      - output: rows

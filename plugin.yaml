@@ -15,6 +15,7 @@ contributes:
   panes:
   - ec2_instances
   - iot_ota_jobs
+  - iot_ota_jobs_overview
   - lambda_health
   - lambdas
   - service_status
