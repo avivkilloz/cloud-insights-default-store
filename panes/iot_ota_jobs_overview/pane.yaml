@@ -13,6 +13,11 @@ inputs:
     label: Job status filter
     help: Optional - IN_PROGRESS, COMPLETED, CANCELED, SCHEDULED or DELETION_IN_PROGRESS. Leave empty for all.
     default: ""
+  - key: name_filter
+    type: text
+    label: Job name filter
+    help: Optional - filter to jobs whose ID contains this text (case-insensitive).
+    default: ''
   - key: max_jobs
     type: text
     label: Max jobs per environment
@@ -53,6 +58,7 @@ layout:
     items:
       - input: connections
       - input: status
+      - input: name_filter
       - input: max_jobs
   - title: Jobs
     clear: [rows]

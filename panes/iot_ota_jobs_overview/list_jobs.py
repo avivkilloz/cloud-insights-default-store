@@ -29,7 +29,7 @@ def run(inputs, ctx):
     if status and status not in STATUSES:
         return {"rows": [], "error": f"Unknown job status '{status}'. Use one of: {', '.join(STATUSES)}."}
     max_jobs = _int(inputs.get("max_jobs"), 50)
-
+    name_filter = (inputs.get("name_filter") or "").strip().lower()
     errors = []
     denied = set()
 
@@ -39,6 +39,8 @@ def run(inputs, ctx):
         try:
             resp = ctx.aws(conn_id, "iot", "ListJobs", params=params, paginate=True)
             jobs = sorted(resp.get("jobs", []), key=lambda j: str(j.get("createdAt") or ""), reverse=True)
+            if name_filter:
+                jobs = [j for j in jobs if name_filter in (j.get("jobId") or "").lower()]
             return conn_id, name, jobs[:max_jobs], None
         except Exception as e:
             return conn_id, name, [], str(e)
