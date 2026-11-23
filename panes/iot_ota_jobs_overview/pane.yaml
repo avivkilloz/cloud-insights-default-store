@@ -28,7 +28,6 @@ actions:
     main: true
     run_label: List jobs
     busy_label: Fetching jobs, details and documents…
-    resets: [view.expanded]
     code:
       file: list_jobs.py
     requires: { connections: Select at least one environment. }
